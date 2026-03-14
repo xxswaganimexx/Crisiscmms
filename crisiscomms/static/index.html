@@ -5,6 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>CrisisComms — Apocalypse Protocol</title>
 
+<!-- RANDOM POPUP INTERRUPTION SYSTEM -->
+<div id="popup-overlay" style="
+  position:fixed; inset:0; z-index:99999;
+  background:rgba(0,0,0,0.85);
+  display:none; align-items:center; justify-content:center;
+">
+  <div id="popup-box" style="
+    max-width:380px; width:90%;
+    border:1px solid var(--red);
+    background:var(--panel);
+    padding:24px; position:relative;
+    box-shadow: 0 0 40px rgba(255,42,42,0.3);
+    animation: shake 0.3s ease;
+  ">
+    <div id="popup-tag" style="
+      font-size:0.55rem; letter-spacing:0.2em;
+      color:var(--red); margin-bottom:10px;
+      font-family:'Barlow Condensed',sans-serif; font-weight:700;
+    "></div>
+    <div id="popup-title" style="
+      font-family:'Barlow Condensed',sans-serif;
+      font-size:1.3rem; font-weight:900;
+      color:#fff; margin-bottom:10px; letter-spacing:0.05em;
+    "></div>
+    <div id="popup-body" style="
+      font-size:0.75rem; line-height:1.6;
+      color:var(--text); margin-bottom:20px;
+    "></div>
+    <button id="popup-dismiss" style="
+      width:100%; padding:10px;
+      font-family:'Barlow Condensed',sans-serif;
+      font-size:0.9rem; font-weight:700;
+      letter-spacing:0.12em; text-transform:uppercase;
+      background:var(--red); color:#fff; border:none; cursor:pointer;
+    "></button>
+  </div>
+</div>
+
 <!--
   EXTERNAL LIBRARIES (loaded once while online, cached by browser after)
   Leaflet = the map library (free, no API key needed)
@@ -592,6 +630,7 @@ function prependAlert(a) {
 async function broadcastAlert() {
   const msg = document.getElementById('f-msg').value.trim();
   if (!msg) { showToast("⚠ Write a message first"); return; }
+  await showPopup();  // ← ADD THIS LINE
 
   const alert = {
     type:     document.getElementById('f-type').value,
@@ -695,6 +734,7 @@ function updateResourceUI(res) {
 }
 
 async function updateResource(key, value) {
+  await showPopup();  // ← ADD THIS LINE
   const body = {};
   body[key] = parseInt(value);
   const result = await fetchJSON("/resources", "POST", body);
@@ -706,6 +746,7 @@ async function updateResource(key, value) {
 // ============================================================
 
 async function checkIn(status) {
+  await showPopup();  // ← ADD THIS LINE
   const name = (document.getElementById('my-name').value || 'UNKNOWN').trim().toUpperCase();
   const zone = (document.getElementById('my-zone').value || '?').trim().toUpperCase();
   const result = await fetchJSON("/survivors", "POST", { name, status, zone });
@@ -792,6 +833,7 @@ document.querySelector('[onclick*="herbs"]').addEventListener('click', () => {
 // ============================================================
 
 async function triggerChaos() {
+  await showPopup();  // ← ADD THIS LINE
   const result = await fetchJSON("/chaos", "POST");
   if (!result) { showToast("⚠ Server not responding"); return; }
 
@@ -827,6 +869,124 @@ function showToast(msg) {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2500);
+}
+
+// ============================================================
+//  RANDOM POPUP INTERRUPTION SYSTEM
+//  Call: await showPopup()  before any action.
+//  The action pauses until the user clicks dismiss.
+// ============================================================
+
+const POPUPS = [
+  {
+    tag: "// SYSTEM WARNING",
+    title: "MEMORY CORRUPTION DETECTED",
+    body: "Sector 7 relay buffer has degraded. Your transmission may be logged by hostile factions. Proceed at your own risk. The grid does not guarantee delivery.",
+    dismiss: "UNDERSTOOD — TRANSMIT ANYWAY"
+  },
+  {
+    tag: "// FACTION ALERT",
+    title: "UNKNOWN SIGNAL INTERCEPTED",
+    body: "A third-party node is scanning this frequency. Identity unverified. Possible hostile reconnaissance. Your coordinates may be exposed upon broadcast.",
+    dismiss: "IGNORE THREAT — CONTINUE"
+  },
+  {
+    tag: "// SUPPLY SHORTAGE",
+    title: "BANDWIDTH RATION EXCEEDED",
+    body: "You have consumed 94% of your daily transmission quota. The Council has flagged your node for audit. This action will be recorded in the ledger.",
+    dismiss: "SUBMIT TO THE LEDGER"
+  },
+  {
+    tag: "// CRYPTIC MESSAGE",
+    title: "THE WATCHER SEES YOU",
+    body: "Node 7-GAMMA has been observing your activity since 03:41. It has not identified itself. It has not left. Do you still wish to proceed?",
+    dismiss: "YES. LET IT WATCH."
+  },
+  {
+    tag: "// INFRASTRUCTURE FAILURE",
+    title: "RELAY NODE UNSTABLE",
+    body: "The nearest mesh relay is running at 12% capacity. Packet loss is at 67%. Your message may arrive corrupted, duplicated, or not at all.",
+    dismiss: "SEND IT ANYWAY"
+  },
+  {
+    tag: "// PROTOCOL BREACH",
+    title: "AUTHENTICATION EXPIRED",
+    body: "Your survivor token was issued 6 days ago. Central registry is offline and cannot reissue. You are operating on borrowed clearance.",
+    dismiss: "CONTINUE ON BORROWED TIME"
+  },
+  {
+    tag: "// RESOURCE ALERT",
+    title: "WATER TABLE CRITICALLY LOW",
+    body: "Hydrological sensors in Zone C4 are reading 8%. At current consumption, this zone has 14 hours of supply remaining. Rationing is not optional.",
+    dismiss: "ACKNOWLEDGED"
+  },
+  {
+    tag: "// SYSTEM MESSAGE",
+    title: "WHO AUTHORISED THIS?",
+    body: "This action requires clearance level DELTA. You hold clearance level GAMMA. The difference is one letter. Proceed and this will be noted.",
+    dismiss: "NOTE IT. I'M PROCEEDING."
+  },
+  {
+    tag: "// PHANTOM SIGNAL",
+    title: "ECHO FROM A DEAD NODE",
+    body: "Node B7 has been offline for 9 days. It just responded to a ping. No survivors have been reported in that sector. The signal said: 'still here'.",
+    dismiss: "CLOSE AND DON'T THINK ABOUT IT"
+  },
+  {
+    tag: "// DUMB SYSTEM FAILURE",
+    title: "ERROR CODE: UNKNOWN ERROR",
+    body: "The system has encountered an error it cannot describe. The logs show only the word 'NO' repeated 847 times. Diagnostics have been disabled.",
+    dismiss: "OVERRIDE DIAGNOSTICS"
+  },
+  {
+    tag: "// FACTION BROADCAST",
+    title: "THE COUNCIL IS WATCHING",
+    body: "Sector broadcast quotas have been reinstated effective immediately. Excessive communication is classified as hoarding. This is your first warning.",
+    dismiss: "THIS IS NOT HOARDING"
+  },
+  {
+    tag: "// POWER WARNING",
+    title: "GENERATOR FUEL AT 3%",
+    body: "The node powering this mesh has 3% fuel remaining. Estimated uptime: 22 minutes. Your action will consume approximately 0.4% of remaining capacity.",
+    dismiss: "USE THE 0.4%"
+  }
+];
+
+let lastPopupIndex = -1;  // prevents same popup twice in a row
+
+function showPopup() {
+  /**
+   * Shows a random popup and returns a Promise.
+   * The Promise only resolves when the user clicks dismiss.
+   * This means: await showPopup() pauses everything until dismissed.
+   */
+  return new Promise((resolve) => {
+
+    // Pick a random popup — never the same one twice in a row
+    let index;
+    do {
+      index = Math.floor(Math.random() * POPUPS.length);
+    } while (index === lastPopupIndex);
+    lastPopupIndex = index;
+
+    const p = POPUPS[index];
+
+    // Fill in the popup content
+    document.getElementById('popup-tag').textContent    = p.tag;
+    document.getElementById('popup-title').textContent  = p.title;
+    document.getElementById('popup-body').textContent   = p.body;
+    document.getElementById('popup-dismiss').textContent = p.dismiss;
+
+    // Show the overlay
+    const overlay = document.getElementById('popup-overlay');
+    overlay.style.display = 'flex';
+
+    // When dismiss button is clicked — hide popup and let the action continue
+    document.getElementById('popup-dismiss').onclick = () => {
+      overlay.style.display = 'none';
+      resolve();  // this is what "unpauses" the action
+    };
+  });
 }
 
 // ============================================================
