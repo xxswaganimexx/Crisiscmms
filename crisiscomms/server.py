@@ -205,7 +205,7 @@ def post_message():
 # --- RESOURCES ---
 @app.route("/resources", methods=["GET"])
 def get_resources():
-    """
+    """hello
     Returns current water, food, medical levels.
     All phones show these same numbers.
     """
@@ -214,7 +214,7 @@ def get_resources():
 
 @app.route("/resources", methods=["POST"])
 def update_resources():
-    """
+    """new
     When someone updates a resource level (e.g. water dropped to 20%),
     it comes here and we update the shared number.
     All phones will see the new level on their next poll.
